@@ -6,10 +6,9 @@ from .models import CustomUser
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import ValidationError
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken,TokenError
 from .serializers import SignUpSerializer
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 
 
 
@@ -50,10 +49,25 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            response={
+                "status":status.HTTP_400_BAD_REQUEST,
+                "error":"Refresh token kerak"
+            }
+            return Response(response)
+
         try:
-            refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response({"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+            response={
+                "status":status.HTTP_205_RESET_CONTENT,
+                "message":"Chiqish muvaffaqiyatli"
+            }
+            return Response(response)
+        except TokenError:
+            response={
+                "status":status.HTTP_400_BAD_REQUEST,
+                "error":"Token notogri muddati otgan"
+            }
+            return Response(response)
