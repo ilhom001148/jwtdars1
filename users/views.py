@@ -8,6 +8,10 @@ from django.contrib.auth import authenticate
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import SignUpSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+
+
 
 class SignUpView(APIView):
     def post(self,request):
@@ -42,14 +46,14 @@ class LoginView(APIView):
         return Response(response)
 
 
-
 class LogoutView(APIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    def post(self,request):
-        request.user.auth_token.delete()
-        response={
-            'status':status.HTTP_200_OK,
-            'message':'muvaffaqiyatli logout qilindi'
-        }
-        return Response(response)
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
